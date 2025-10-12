@@ -177,16 +177,17 @@ self.addEventListener('fetch', event => {
     }
 
     // Cache-only Startgies for ys.static resources
-    if (event.request.url.indexOf('ys.static') > -1){
-      event.respondWith(fetchHelper.cacheFirst(event.request.url))
-      return;
-    }
+    //if (event.request.url.indexOf('ys.static') > -1){
+    //  event.respondWith(fetchHelper.cacheFirst(event.request.url))
+    //  return;
+    //}
 
     // Stale-while-revalidate for possiblily dynamic content
     // similar to HTTP's stale-while-revalidate: https://www.mnot.net/blog/2007/12/12/stale
     // Upgrade from Jake's to Surma's: https://gist.github.com/surma/eb441223daaedf880801ad80006389f1
     const cached = caches.match(event.request);
-    const fetched = fetch(getCacheBustingUrl(event.request), { cache: "no-store" });
+    const fixedUrl = getFixedUrl(event.request);
+    const fetched = fetch(fixedUrl, {cache: "no-store"});
     const fetchedCopy = fetched.then(resp => resp.clone());
     
     // Call respondWith() with whatever we get first.
@@ -202,18 +203,18 @@ self.addEventListener('fetch', event => {
 
     // Update the cache with the version we fetched (only for ok status)
     event.waitUntil(
-      Promise.all([fetchedCopy, caches.open(CACHE)])
+      Promise.all([fetchedCopy, caches.open(RUNTIME)])
         .then(([response, cache]) => response.ok && cache.put(event.request, response))
-        .catch(_ => {/* eat any errors */ })
+        .catch(_ => {/* eat any errors */})
     );
 
     // If one request is a HTML naviagtion, checking update!
-    if (isNavigationReq(event.request)) {
-      // you need "preserve logs" to see this log
-      // cuz it happened before navigating
-      console.log(`fetch ${event.request.url}`)
-      event.waitUntil(revalidateContent(cached, fetchedCopy))
-    }
+    //if (isNavigationReq(event.request)) {
+    //  // you need "preserve logs" to see this log
+    //  // cuz it happened before navigating
+    //  console.log(`fetch ${event.request.url}`)
+    //  event.waitUntil(revalidateContent(cached, fetchedCopy))
+    //}
   }
 });
 
